@@ -1,0 +1,25 @@
+########################################
+#
+#	title:		Album-Cover-Converter
+#	author:		MrJollyOlliMan
+#	date:		2018-05-16
+#
+########################################
+
+### version 1.2
+
+	- add label with program title
+	- change code from python 2.x.x to 3.x.x
+	- add a small preview image of the selected album cover, underneath the file-name
+	- add check if output folder exists
+	- add an over-right request, if output file already exists 
+	- change wording of console print outs
+	- add Image.ANTIALIAS to function 'ConvertImage'
+	
+
+### version 1.1
+
+	- add a preview witch file is 'selected'/'open', by showing the file-name
+	- support for different subdirectory strings "/" and "\", auto-select by detected OS
+		- but manual switch-able
+	- modified output file name from 'Format.jpg' to 'Folder.jpg'
