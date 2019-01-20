@@ -1,9 +1,8 @@
 #!/bin/python3
-#! now python v3.x.x
 #
-# version:  v1.2
-# date:     16.05.2018
-# author:   Mr.JollyOlliMan
+# version:  v1.3
+# date:     2019-01-20
+# author:   MrJollyOlliMan
 
 #import Tkinter
 #from Tkinter import *
@@ -38,13 +37,26 @@ def SelectOutFolderSame():
 def SelectOutFolderSub():
     CbuOutFolderSame.deselect()
 
-def MakePreviewImage(ThisFile, px=180):
+def MakePreviewImage(ThisFile, px=160):
     if ThisFile == None:
         ThisImg = Image.new('RGB', (px, px), (240, 240, 240))
     else:
-        ThisImg = Image.open(ThisFile).resize((px, px),Image.ANTIALIAS)
+        ThisImg = Image.open(ThisFile)
+        global SquareBox
+        SquareBox = fctBoxForSquareSize(ThisImg.size)
+        ThisImg = ThisImg.resize((px, px), Image.ANTIALIAS, SquareBox)
     ThisImg = ImageTk.PhotoImage(ThisImg)
     return ThisImg
+
+#    function check is size tuple is wider than 110% height -> make cropBox  
+def fctBoxForSquareSize(thisSize):          # as Tuple (width, height)
+    if thisSize[0] > thisSize[1]*1.1:
+        newX = thisSize[0]-thisSize[1]
+        thisBox = (newX, 0, thisSize[0], thisSize[1])
+    else:
+        thisBox = None
+    print('set crop box to',thisBox)
+    return thisBox      # as Tuple (left, lower, right, upper) or None
 
 def OpenFile():
     this_file = filedialog.askopenfile(filetypes=[('JPEG (File Interchange Format)','.jpg')], initialdir = initial_album_dir)
@@ -117,13 +129,13 @@ def ConvertImage(ThisFilePath, ThisFileName, ThisOutputExtention = ""):
             outputFile = ThisFilePath + ThisOutputExtention + StrOutFileName1.get()
             if not checkOutputFile(outputFile):
                 print(outputFile)
-                out1 = img.resize((200, 200), Image.ANTIALIAS)
+                out1 = img.resize((200, 200), Image.ANTIALIAS, SquareBox)
                 out1.save(outputFile, "JPEG", quality = 90)
         if not (StrOutFileName2.get() == ""):
             outputFile = ThisFilePath + ThisOutputExtention + StrOutFileName2.get()
             if not checkOutputFile(outputFile):
                 print(outputFile)
-                out2 = img.resize((75, 75), Image.ANTIALIAS)
+                out2 = img.resize((75, 75), Image.ANTIALIAS, SquareBox)
                 out2.save(outputFile, "JPEG", quality = 85)
     print('done!')
     print('')
@@ -239,7 +251,3 @@ ButConvertFiles.pack(side = RIGHT)
 #            widthxheight
 main.geometry("370x350")
 main.mainloop()
-
-
-
-
