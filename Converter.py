@@ -1,253 +1,246 @@
 #!/bin/python3
 #
-# version:  v1.3
-# date:     2019-01-20
+##########################################
+#
+# version:  v1.4
+# date:     2019-01-21
 # author:   MrJollyOlliMan
+#
+##########################################
 
-#import Tkinter
-#from Tkinter import *
-
-from tkinter import Button, Checkbutton, Frame, Label, LabelFrame, Tk, StringVar, LEFT, RIGHT, BOTTOM, TOP, NW, NE, W, E, CENTER, BOTH, X, messagebox, filedialog#, PhotoImage
-
+from tkinter import Button, Checkbutton, Frame, IntVar, Label, LabelFrame, Radiobutton, StringVar, Tk, LEFT, RIGHT, TOP, W, X, messagebox, filedialog
 from PIL import Image, ImageTk
 import os
-import platform
 
-#-------------- global variables
+from fctModul import fctCheckDirectory, fctCheckOutputFile
 
-IntGloVerticalSpace = 5
-IntGloHorizontalSpace = 5
+
+#---    global variables
+
+DEBUG = True
+intX, intY = 5, 5
+strFileAbsPath, strFileName, strFilePath = "", "", ""
+
 initial_album_dir = '\\192.168.2.11\audio_dsic\''
 #initial_album_dir = 'F:\\aktuell\\Python\\Python Album-Cover-Converter'
 #initial_album_dir = 'C:\\Benutzer\\oscheum\\Eigene Dokumente\\PureSync\\41_Elektronik\\05_python\\projects\\Album-Cover-Converter'
-StrFileAbsPath = ""
-StrFilePath = ""
-StrFileName = ""
 
-#-------------- global functions
+SquareBox = None
+imgPreview = None
 
-def SelectOutFolderSame():
-    CbuOutFolderSubCD1.deselect()
-    CbuOutFolderSubCD2.deselect()
-    CbuOutFolderSubCD3.deselect()
-    CbuOutFolderSubCD4.deselect()
-    CbuOutFolderSubCD5.deselect()
-    CbuOutFolderSubCD6.deselect()
 
-def SelectOutFolderSub():
-    CbuOutFolderSame.deselect()
+#---    global functions
 
-def MakePreviewImage(ThisFile, px=160):
+def fctBoxForSquareSize(thisSize):          # thisSize as Tuple (width, height)
+    if intRBtnCropBoxButtons.get() == 1:
+        newX = thisSize[0]-thisSize[1]
+        thisBox = (newX, 0, thisSize[0], thisSize[1])
+    else:
+        thisBox = None
+    if DEBUG:
+        print('set crop box to',thisBox)
+    return thisBox      # as Tuple (left, lower, right, upper) or None
+
+def fctConvertImage(ThisFilePath, ThisFileName, ThisOutputExtention = ""):
+    img = Image.open(ThisFilePath + ThisFileName)
+    #print(ThisFilePath)
+    #print(ThisFileName)
+    if fctCheckDirectory(ThisFilePath + ThisOutputExtention):
+        print('creating the thumbnails:')
+        if not (CBtnOutputFileVal[0][2].get() == ""):
+            outputFile = ThisFilePath + ThisOutputExtention + CBtnOutputFileVal[0][2].get()
+            if not fctCheckOutputFile(outputFile):
+                print(outputFile)
+                out1 = img.resize((200, 200), Image.ANTIALIAS, SquareBox)
+                out1.save(outputFile, "JPEG", quality = 90)
+        if not (CBtnOutputFileVal[1][2].get() == ""):
+            outputFile = ThisFilePath + ThisOutputExtention + CBtnOutputFileVal[1][2].get()
+            if not fctCheckOutputFile(outputFile):
+                print(outputFile)
+                out2 = img.resize((75, 75), Image.ANTIALIAS, SquareBox)
+                out2.save(outputFile, "JPEG", quality = 85)
+    print('done!\n')
+
+def fctMakePreviewImage(ThisFile, px=180):
     if ThisFile == None:
         ThisImg = Image.new('RGB', (px, px), (240, 240, 240))
     else:
         ThisImg = Image.open(ThisFile)
-        global SquareBox
         SquareBox = fctBoxForSquareSize(ThisImg.size)
         ThisImg = ThisImg.resize((px, px), Image.ANTIALIAS, SquareBox)
     ThisImg = ImageTk.PhotoImage(ThisImg)
     return ThisImg
 
-#    function check is size tuple is wider than 110% height -> make cropBox  
-def fctBoxForSquareSize(thisSize):          # as Tuple (width, height)
-    if thisSize[0] > thisSize[1]*1.1:
-        newX = thisSize[0]-thisSize[1]
-        thisBox = (newX, 0, thisSize[0], thisSize[1])
-    else:
-        thisBox = None
-    print('set crop box to',thisBox)
-    return thisBox      # as Tuple (left, lower, right, upper) or None
-
-def OpenFile():
-    this_file = filedialog.askopenfile(filetypes=[('JPEG (File Interchange Format)','.jpg')], initialdir = initial_album_dir)
-    abs_path = os.path.abspath(this_file.name)
-    #print(abs_path)
-    global StrFileAbsPath
-    StrFileAbsPath = abs_path
-    #print(StrSubDirectory.get())
-    path_parts = abs_path.split( StrSubDirectory.get() )
-    global StrFileName
-    StrFileName = path_parts[len(path_parts) - 1]
-    print('file: '+StrFileName)
-    StrSelectedFile.set(StrFileName)
-    IntNoOfLeftLetters = len(path_parts[len(path_parts) - 1])
-    global StrFilePath
-    StrFilePath = abs_path[:-IntNoOfLeftLetters]
-    print('path: '+StrFilePath)
-    
+def fctUpdatePreviewImage():
     global imgPreview
-    imgPreview = MakePreviewImage(abs_path)           # update the selected image in LblPreviewImage
-    LblPreviewImage.configure(image=imgPreview)
-    LblPreviewImage.image = imgPreview
-
-def Converting():
-    global StrFilePath
-    global StrFileName
-    if StrFilePath == "":
-        messagebox.showinfo("No file selected!", "You must select a jpg file, before converting this!")
-        #OpenFile()
+    if strFileAbsPath == "":
+        imgPreview = fctMakePreviewImage(None)
     else:
-        if StrOutFolderSame.get() == "":
-            ConvertImage(StrFilePath, StrFileName)
-        if StrOutFolderSubCD1.get() == "CD 1":
-            #print(StrFilePath + StrOutFolderSubCD1.get() + StrSubDirectory.get())
-            ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD1.get() + StrSubDirectory.get())
-        if StrOutFolderSubCD2.get() == "CD 2":
-            ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD2.get() + StrSubDirectory.get())
-        if StrOutFolderSubCD3.get() == "CD 3":
-           ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD3.get() + StrSubDirectory.get())
-        if StrOutFolderSubCD4.get() == "CD 4":
-           ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD4.get() + StrSubDirectory.get())
-        if StrOutFolderSubCD5.get() == "CD 5":
-           ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD5.get() + StrSubDirectory.get())
-        if StrOutFolderSubCD6.get() == "CD 6":
-           ConvertImage(StrFilePath, StrFileName, StrOutFolderSubCD6.get() + StrSubDirectory.get())
+        imgPreview = fctMakePreviewImage(strFileAbsPath)
+    lblPreviewImage.configure(image=imgPreview)
+    lblPreviewImage.image = imgPreview
+    return 0
 
-def checkDirectory(ThisDirectory):
-    if os.path.isdir(ThisDirectory):
-        return True
-    else:
-        messagebox.showwarning("Directory doesn't exist!", "The selected directory: \n\n"+ThisDirectory+"\n\ndoesn't exist.")
-        return False
+
+#---    callbacks
     
-def checkOutputFile(ThisFile):
-    if os.path.isfile(ThisFile):
-        if messagebox.askyesno("File already exist!", "There exists already a file: \n\n"+ThisFile+"\n\nin the output directory. Do you want to replace this file?"):
-            return False
-        else:
-            return True
+def callConverting():
+    global strFileName, strFilePath
+    
+    if strFilePath == "":
+        messagebox.showinfo("No file selected!", "You must select a jpg file, before converting this!")
     else:
-        return False
+        for i in range(0, 7):
+            if CBtnOutputDirectoryVal[i][2].get() == CBtnOutputDirectoryVal[i][1]:
+                if i != 0:
+                    fctConvertImage(strFilePath, strFileName, CBtnOutputDirectoryVal[i][2].get() + strDirectorySeparator.get() )
+                else:
+                    fctConvertImage(strFilePath, strFileName)
 
-def ConvertImage(ThisFilePath, ThisFileName, ThisOutputExtention = ""):
-    img = Image.open(ThisFilePath + ThisFileName)
-    #print(ThisFilePath)
-    #print(ThisFileName)
-    if checkDirectory(ThisFilePath + ThisOutputExtention):
-        print('creating the thumbnails:')
-        if not (StrOutFileName1.get() == ""):
-            outputFile = ThisFilePath + ThisOutputExtention + StrOutFileName1.get()
-            if not checkOutputFile(outputFile):
-                print(outputFile)
-                out1 = img.resize((200, 200), Image.ANTIALIAS, SquareBox)
-                out1.save(outputFile, "JPEG", quality = 90)
-        if not (StrOutFileName2.get() == ""):
-            outputFile = ThisFilePath + ThisOutputExtention + StrOutFileName2.get()
-            if not checkOutputFile(outputFile):
-                print(outputFile)
-                out2 = img.resize((75, 75), Image.ANTIALIAS, SquareBox)
-                out2.save(outputFile, "JPEG", quality = 85)
-    print('done!')
-    print('')
+def callOpenFileDialog():
+    global strFileAbsPath, strFileName, strFilePath
+    
+    this_file = filedialog.askopenfile(filetypes=[('JPEG (File Interchange Format)','.jpg')], initialdir = initial_album_dir)
+    strFileAbsPath = os.path.abspath(this_file.name)
+    
+    path_parts = strFileAbsPath.split( strDirectorySeparator.get() ) 
+    strFileName = path_parts[len(path_parts) - 1]
+    strSelectedFile.set(strFileName)
+    
+    IntNoOfLeftLetters = len(path_parts[len(path_parts) - 1])
+    strFilePath = strFileAbsPath[:-IntNoOfLeftLetters]
+    if DEBUG:
+#        print('strFileAbsPath:', strFileAbsPath)
+        print(strDirectorySeparator.get())
+        print('strFileName:', strFileName)
+        print('strFilePath:', strFilePath)
+    
+    fctUpdatePreviewImage()
+
+def callSelectOutFolderSame():
+    for i in range(1, 7):
+        CBtnOutputDirectory[i].deselect()
+
+def callSelectOutFolderSub():
+    CBtnOutputDirectory[0].deselect()
 
 
-#-------------- def. main window
+#---    def. main window + frames
+
 main = Tk(className = "album cover converter")
 
-#-------------- def. widgets
-FrameCheckbuttons = Frame ( main )
-FrameRightColumn = Frame( FrameCheckbuttons )
-FrameLeftColumn = Frame( FrameCheckbuttons )
-FrameCheckbuttonsSubDirectory = LabelFrame (FrameLeftColumn, text = "operating OS" )
-FrameCheckbuttons1 = LabelFrame ( FrameRightColumn, text = "output files" )
-FrameCheckbuttons2 = LabelFrame ( FrameLeftColumn, text = "output directory", pady = IntGloHorizontalSpace )
-FrameMiddleColumn = Frame ( FrameCheckbuttons, width = 2*IntGloHorizontalSpace )
+frmMain = Frame ( main )
+frmLeftColumn = Frame( frmMain, padx = intX, pady = intY/2 )
+frmRightColumn = Frame( frmMain, padx = intX, pady = intY/2 )
 
-LblTitle = Label(FrameLeftColumn, text = "album cover\nconverter", height=3, fg="dark blue", font="Verdana 12 bold italic")
-
-StrSubDirectory = StringVar()
-CbuSubDirectory = Checkbutton ( FrameCheckbuttonsSubDirectory, text = "Windows", variable = StrSubDirectory, onvalue = "\\", offvalue = "/", padx = IntGloHorizontalSpace )
-CbuSubDirectory2 = Checkbutton ( FrameCheckbuttonsSubDirectory, text = "Linux", variable = StrSubDirectory, onvalue = "/", offvalue = "\\", padx = IntGloHorizontalSpace )
-
-StrOutFileName1 = StringVar()
-StrOutFileName2 = StringVar()
-CbuFolder = Checkbutton ( FrameCheckbuttons1, text = "Folder.jpg [200x200 px]", variable = StrOutFileName1, onvalue = "Folder.jpg", offvalue = "", padx = IntGloHorizontalSpace)
-CbuAlbumArtSmall = Checkbutton ( FrameCheckbuttons1, text = "AlbumArtSmall.jpg [75x75 px]", variable = StrOutFileName2, onvalue = "AlbumArtSmall.jpg", offvalue = "", padx = IntGloHorizontalSpace)
-
-StrOutFolderSame = StringVar()
-StrOutFolderSubCD1 = StringVar()
-StrOutFolderSubCD2 = StringVar()
-StrOutFolderSubCD3 = StringVar()
-StrOutFolderSubCD4 = StringVar()
-StrOutFolderSubCD5 = StringVar()
-StrOutFolderSubCD6 = StringVar()
-CbuOutFolderSame = Checkbutton ( FrameCheckbuttons2, text = "same folder", variable = StrOutFolderSame, onvalue = "", offvalue = " ", command = SelectOutFolderSame, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD1 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 1'", variable = StrOutFolderSubCD1, onvalue = "CD 1", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD2 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 2'", variable = StrOutFolderSubCD2, onvalue = "CD 2", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD3 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 3'", variable = StrOutFolderSubCD3, onvalue = "CD 3", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD4 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 4'", variable = StrOutFolderSubCD4, onvalue = "CD 4", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD5 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 5'", variable = StrOutFolderSubCD5, onvalue = "CD 5", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
-CbuOutFolderSubCD6 =  Checkbutton ( FrameCheckbuttons2, text = "sub folder 'CD 6'", variable = StrOutFolderSubCD6, onvalue = "CD 6", offvalue = "", command = SelectOutFolderSub, padx = IntGloHorizontalSpace)
+lblTitle = Label(frmLeftColumn, text = "album cover\nconverter", fg="dark blue", font="Verdana 12 bold italic")
 
 
-FrameButtons1 = Frame( FrameRightColumn )
-FrameButtonsVerticalSpace1 = Frame ( FrameButtons1, height = IntGloVerticalSpace)
-FrameButtonsVerticalSpace2 = Frame ( FrameButtons1, height = IntGloVerticalSpace)
-FrameFilePreview = LabelFrame ( FrameButtons1, text = "selected file" )
-FrameButtonsVerticalSpace3 = Frame ( FrameFilePreview, height = 2*IntGloVerticalSpace)
-StrSelectedFile = StringVar()
-LblSelectedFile = Label ( FrameFilePreview, textvariable = StrSelectedFile, height=2, wraplength = 180 )
-StrSelectedFile.set("- no file -")
-imgPreview = MakePreviewImage(None,160)
-#imgPreview = MakePreviewImage("C:\\users\\oscheum\\documents\\PureSync\\41_Elektronik\\05_python\\projects\\Album-Cover-Thumbnail-Converter\\Inv\\Paul.jpg")
-LblPreviewImage = Label ( FrameFilePreview, height=160, width=160, image=imgPreview )
-ButSelectFile = Button ( FrameButtons1, text = "open file", command = OpenFile, width = "12")
-ButConvertFiles = Button ( FrameButtons1, text = "convert", command = Converting, width = "12")
+#---    OS widgets; directory separator
+
+frmRBtnOS = LabelFrame (frmLeftColumn, text = "operating OS", padx = intX, pady = intY/2 )
+
+strDirectorySeparator = StringVar()
+strDirectorySeparator.set("\\")
+OSButtons = [  ("Windows", "\\"),
+               ("Linux", "/") ]
+for Text, Val in OSButtons:
+    RBtnOSButtons = Radiobutton(frmRBtnOS, text = Text, variable = strDirectorySeparator, value = Val, indicatoron = 0)
+    RBtnOSButtons.pack( fill = X, pady = intY/2 )
 
 
-#-------------- set default values
-if platform.platform()[:7] == "Windows":
-    CbuSubDirectory.select()
-    CbuSubDirectory2.deselect()
-else:
-    CbuSubDirectory.deselect()
-    CbuSubDirectory2.select()
+#---    output directory
 
-CbuFolder.select()
-CbuAlbumArtSmall.select()
-CbuOutFolderSame.select()
-CbuOutFolderSubCD1.deselect()
-CbuOutFolderSubCD2.deselect()
-CbuOutFolderSubCD3.deselect()
-CbuOutFolderSubCD4.deselect()
-CbuOutFolderSubCD5.deselect()
-CbuOutFolderSubCD6.deselect()
+FrameCheckbuttons2 = LabelFrame ( frmLeftColumn, text = "output directory", pady = intY)
 
-#-------------- set widgets
-FrameCheckbuttons.pack( expand="yes" )
-FrameLeftColumn.pack( side = LEFT )
-LblTitle.pack()
-FrameCheckbuttonsSubDirectory.pack ( side = TOP, fill = X )
-FrameCheckbuttons2.pack(side = TOP )
-FrameMiddleColumn.pack( side = LEFT )
-FrameRightColumn.pack( side = RIGHT )
-FrameCheckbuttons1.pack()
-FrameButtons1.pack( fill = X )
+CBtnOutputDirectoryVal = [ ("same folder", "", StringVar() ),
+                           ("sub folder 'CD 1'", "CD 1", StringVar() ),
+                           ("sub folder 'CD 2'", "CD 2", StringVar() ),
+                           ("sub folder 'CD 3'", "CD 3", StringVar() ),
+                           ("sub folder 'CD 4'", "CD 4", StringVar() ),
+                           ("sub folder 'CD 5'", "CD 5", StringVar() ), 
+                           ("sub folder 'CD 6'", "CD 6", StringVar() ) ]
+i = 0
+CBtnOutputDirectory = {}
+for Text, OnV, Var in CBtnOutputDirectoryVal:
+    if i == 0:
+        CBtnOutputDirectory[i] = Checkbutton ( FrameCheckbuttons2, text = Text, variable = Var, onvalue = OnV, offvalue = " ", command = callSelectOutFolderSame, padx = intX )
+    else:
+        CBtnOutputDirectory[i] = Checkbutton ( FrameCheckbuttons2, text = Text, variable = Var, onvalue = OnV, offvalue = "", command = callSelectOutFolderSub, padx = intX )
+    CBtnOutputDirectory[i].pack( anchor = W )
+    CBtnOutputDirectory[i].select()
+    i = i + 1
 
-CbuSubDirectory.pack(anchor = W)
-CbuSubDirectory2.pack(anchor = W)   
+CBtnOutputDirectory[0].select()
+callSelectOutFolderSame()
 
-CbuFolder.pack(anchor = W)
-CbuAlbumArtSmall.pack(anchor = W)
 
-CbuOutFolderSame.pack(anchor = W)
-CbuOutFolderSubCD1.pack(anchor = W)
-CbuOutFolderSubCD2.pack(anchor = W)
-CbuOutFolderSubCD3.pack(anchor = W)
-CbuOutFolderSubCD4.pack(anchor = W)
-CbuOutFolderSubCD5.pack(anchor = W)
-CbuOutFolderSubCD6.pack(anchor = W)
+#---    BTNs 'open file' & 'convert
 
-FrameButtonsVerticalSpace1.pack()
-FrameFilePreview.pack( fill = X )
-LblSelectedFile.pack()
-LblPreviewImage.pack()
-FrameButtonsVerticalSpace3.pack()
-FrameButtonsVerticalSpace2.pack()
-ButSelectFile.pack(side = LEFT)
-ButConvertFiles.pack(side = RIGHT)
+frmButtons = Frame( frmLeftColumn, pady = intY/2 )
 
-#-------------- def & set main window
-#            widthxheight
-main.geometry("370x350")
+btnSelectFile = Button ( frmButtons, text = "open file", command = callOpenFileDialog, width = "12", pady = intY/2 )
+btnConvertFiles = Button ( frmButtons, text = "convert", command = callConverting, width = "12", pady = intY/2 )
+btnSelectFile.pack( fill = X, padx = intX, pady = intY/2 )
+btnConvertFiles.pack( fill = X, padx = intX, pady = intY/2 )
+
+
+#---    output file widgets
+
+frmCBtnOutputFiles = LabelFrame ( frmRightColumn, text = "output files", padx = intX)
+
+CBtnOutputFileVal = [ ("Folder.jpg [200x200 px]", "Folder.jpg", StringVar()),
+                    ("AlbumArtSmall.jpg [75x75 px]", "AlbumArtSmall.jpg", StringVar()) ]
+for Text, OnV, Var in CBtnOutputFileVal:
+    CBtnOutputFile = Checkbutton ( frmCBtnOutputFiles, text = Text, variable = Var, onvalue = OnV, offvalue = "")
+    CBtnOutputFile.pack( anchor = W )
+    CBtnOutputFile.select()
+
+
+#---    crop box widgets
+
+frmCropBox = LabelFrame ( frmRightColumn, text = "crop the image?", padx = intX, pady = intY/2 )
+
+intRBtnCropBoxButtons = IntVar()
+intRBtnCropBoxButtons.set(0)
+RBtnCropBoxButtonsVal = [  ("no", 0),
+                           ("flushed right squared crop box", 1) ]
+for Text, Val in RBtnCropBoxButtonsVal:
+    RBtnCropBoxButtons = Radiobutton(frmCropBox, text = Text, variable = intRBtnCropBoxButtons, value = Val, command = fctUpdatePreviewImage, indicatoron = 0)
+    RBtnCropBoxButtons.pack( fill = X, pady = intY/2 )
+
+
+#---    preview widgets
+
+frmFilePreview = LabelFrame ( frmRightColumn, text = "selected file")
+strSelectedFile = StringVar()
+strSelectedFile.set("- no file -")
+lblSelectedFile = Label ( frmFilePreview, textvariable = strSelectedFile, wraplength = 180)
+lblSelectedFile.pack()
+lblPreviewImage = Label ( frmFilePreview, height=180, width=180, image=imgPreview)
+lblPreviewImage.pack( ipady = intY )
+fctUpdatePreviewImage()
+
+
+#---    set widgets left side
+
+frmMain.pack( expand="yes" )
+frmLeftColumn.pack( side = LEFT )
+lblTitle.pack()
+frmRBtnOS.pack ( side = TOP, fill = X, pady = intY/2 )
+FrameCheckbuttons2.pack( side = TOP, pady = intY/2 )
+frmButtons.pack( fill = X, pady = intY/2 )
+
+
+#---    set widgets right side
+
+frmRightColumn.pack( side = RIGHT )
+frmCBtnOutputFiles.pack( pady = intY/2 )
+frmCropBox.pack( fill = X, pady = intY/2 )
+frmFilePreview.pack( fill = X, pady = intY/2 )
+
+
+#---    def & set main window
+
+main.geometry("370x440")    # width x height
 main.mainloop()
