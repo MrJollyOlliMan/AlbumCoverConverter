@@ -1,11 +1,21 @@
-########################################
+##########################################
 #
-#	title:		Album-Cover-Converter
-#	author:		MrJollyOlliMan
-#	date:		2019-01-20
+# title:    Album-Cover-Converter
+# date:     2019-01-21
+# author:   MrJollyOlliMan
 #
-########################################
+##########################################
 
+### version 1.4
+
+    - complete rename of all variable and objects
+        - they now start with call, fct, ... lbl, frm, btn, CBtn, CBtn, ... str, int, ...
+    - add [fctModule.py] with os-based functions
+    - complete restructure arrangment of tkinter objects
+    - change operating system choose from check- to radiobuttons
+    - move 'open file' & 'convert' button to the left
+    
+    
 ### version 1.3
 
     - add fcunction: fctBoxForSquareSize
